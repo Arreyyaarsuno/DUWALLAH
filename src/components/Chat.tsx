@@ -19,7 +19,6 @@ export function Chat() {
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Map<string, TypingUser>>(new Map());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -213,41 +212,19 @@ export function Chat() {
     if (!newMessage.trim() || !selectedRoom || !user || !profile) return;
 
     const messageText = newMessage.trim();
-    const tempId = `temp-${Date.now()}`;
-
-    const optimisticMessage: ExtendedChatMessage = {
-      id: tempId,
-      room_id: selectedRoom,
-      user_id: user.id,
-      message: messageText,
-      created_at: new Date().toISOString(),
-      sender_name: profile.name,
-    };
-
-    setMessages((prev) => [...prev, optimisticMessage]);
     setNewMessage('');
-    setSending(true);
 
     try {
-      const { error } = await supabase
+      await supabase
         .from('chat_messages')
         .insert({
           room_id: selectedRoom,
           user_id: user.id,
           message: messageText,
         });
-
-      if (error) {
-        console.error('Error sending message:', error);
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        setNewMessage(messageText);
-      }
     } catch (error) {
-      console.error('Unexpected error:', error);
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      console.error('Error sending message:', error);
       setNewMessage(messageText);
-    } finally {
-      setSending(false);
     }
   };
 
@@ -321,20 +298,17 @@ export function Chat() {
                     <>
                       {messages.map((message) => {
                         const isOwn = message.user_id === user?.id;
-                        const isTempMessage = message.id.startsWith('temp-');
                         return (
                           <div
                             key={message.id}
-                            className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${
-                              isTempMessage ? 'opacity-60' : 'opacity-100'
-                            }`}
+                            className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
                               className={`max-w-xs lg:max-w-md ${
                                 isOwn
                                   ? 'bg-blue-600 text-white'
                                   : 'bg-white text-gray-900 border border-gray-200'
-                              } rounded-2xl px-4 py-2 shadow-sm transition-opacity`}
+                              } rounded-2xl px-4 py-2 shadow-sm`}
                             >
                               {!isOwn && message.sender_name && (
                                 <p className="text-xs font-semibold mb-1 text-gray-600">
@@ -347,7 +321,7 @@ export function Chat() {
                                   isOwn ? 'text-blue-200' : 'text-gray-500'
                                 }`}
                               >
-                                {isTempMessage ? 'Sending...' : new Date(message.created_at).toLocaleTimeString([], {
+                                {new Date(message.created_at).toLocaleTimeString([], {
                                   hour: '2-digit',
                                   minute: '2-digit',
                                 })}
@@ -376,19 +350,14 @@ export function Chat() {
                       value={newMessage}
                       onChange={handleInputChange}
                       placeholder="Type a message..."
-                      disabled={sending}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <button
                       type="submit"
-                      disabled={!newMessage.trim() || sending}
+                      disabled={!newMessage.trim()}
                       className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {sending ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Send className="w-5 h-5" />
-                      )}
+                      <Send className="w-5 h-5" />
                     </button>
                   </form>
                 </div>
