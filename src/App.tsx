@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Auth } from './components/Auth';
+import { Landing } from './components/Landing';
 import { CreateProfile } from './components/CreateProfile';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
@@ -11,6 +12,8 @@ import { Chat } from './components/Chat';
 function AppContent() {
   const { user, profile, loading } = useAuth();
   const [currentTab, setCurrentTab] = useState('home');
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   if (loading) {
     return (
@@ -24,7 +27,21 @@ function AppContent() {
   }
 
   if (!user) {
-    return <Auth />;
+    if (showAuth) {
+      return <Auth initialMode={authMode} />;
+    }
+    return (
+      <Landing
+        onLoginClick={() => {
+          setAuthMode('login');
+          setShowAuth(true);
+        }}
+        onSignupClick={() => {
+          setAuthMode('signup');
+          setShowAuth(true);
+        }}
+      />
+    );
   }
 
   if (!profile) {
