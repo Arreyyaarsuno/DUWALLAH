@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ModeProvider, useMode } from './contexts/ModeContext';
 import { Auth } from './components/Auth';
 import { Landing } from './components/Landing';
 import { CreateProfile } from './components/CreateProfile';
@@ -7,10 +8,13 @@ import { Layout } from './components/Layout';
 import { Home } from './components/Home';
 import { Profiles } from './components/Profiles';
 import { Notes } from './components/Notes';
+import { Study } from './components/Study';
 import { Chat } from './components/Chat';
+import { Confessions } from './components/Confessions';
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
+  const { mode } = useMode();
   const [currentTab, setCurrentTab] = useState('home');
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -54,10 +58,14 @@ function AppContent() {
         return <Home onTabChange={setCurrentTab} />;
       case 'profiles':
         return <Profiles />;
+      case 'study':
+        return <Study />;
       case 'notes':
         return <Notes />;
       case 'chat':
         return <Chat />;
+      case 'confessions':
+        return <Confessions />;
       default:
         return <Home onTabChange={setCurrentTab} />;
     }
@@ -73,7 +81,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ModeProvider>
+        <AppContent />
+      </ModeProvider>
     </AuthProvider>
   );
 }
